@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💰 Control de Pagos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a22;
+    --surface2: #22222e;
+    --border: #2e2e3e;
+    --accent: #7c5cfc;
+    --accent2: #00e5a0;
+    --danger: #ff4d6d;
+    --text: #eeeef5;
+    --muted: #7777a0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 90px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #1a1030, #0f1a30);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 20px 14px;
+    position: sticky; top: 0; z-index: 100;
+  }
+
+  .header-top {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 12px;
+  }
+
+  h1 { font-family: 'Syne', sans-serif; font-size: 1.35rem; font-weight: 800; }
+  h1 span { color: var(--accent2); }
+
+  .stats { display: flex; gap: 8px; }
+
+  .stat {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 7px 12px; text-align: center; min-width: 64px;
+  }
+  .stat-num { font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 800; line-height: 1; }
+  .stat-num.g { color: var(--accent2); }
+  .stat-num.r { color: var(--danger); }
+  .stat-num.p { color: var(--accent); }
+  .stat-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+
+  .progress-bar { height: 5px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 99px;
+    transition: width .5s cubic-bezier(.34,1.56,.64,1);
+  }
+
+  /* ── ACTIONS ── */
+  .actions {
+    display: flex; gap: 8px; padding: 12px 20px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .actions::-webkit-scrollbar { display: none; }
+
+  .btn {
+    font-family: 'DM Sans', sans-serif; font-size: .78rem; font-weight: 600;
+    border: none; border-radius: 10px; padding: 9px 14px;
+    cursor: pointer; white-space: nowrap; transition: all .15s;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .btn:active { transform: scale(.95); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #9575ff; }
+  .btn-success { background: rgba(0,229,160,.15); color: var(--accent2); border: 1px solid rgba(0,229,160,.3); }
+  .btn-danger  { background: rgba(255,77,109,.12); color: var(--danger);  border: 1px solid rgba(255,77,109,.25); }
+  .btn-ghost   { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); }
+
+  /* ── SEARCH ── */
+  .search-wrap { padding: 0 20px 10px; }
+  .search-rel { position: relative; }
+  .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .85rem; pointer-events: none; }
+  .search-input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: .9rem; padding: 10px 14px 10px 38px; outline: none; transition: border .2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+
+  /* ── LIST ── */
+  .list { padding: 0 20px; display: flex; flex-direction: column; gap: 7px; }
+
+  .section-title {
+    font-family: 'Syne', sans-serif; font-size: .65rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--muted); padding: 14px 0 6px;
+  }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; display: flex; align-items: center;
+    gap: 12px; padding: 11px 12px; transition: all .2s; position: relative; overflow: hidden;
+  }
+  .card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--danger); transition: background .3s;
+  }
+  .card.paid::before { background: var(--accent2); }
+  .card.paid { background: rgba(0,229,160,.04); border-color: rgba(0,229,160,.18); }
+
+  .avatar {
+    width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-size: .8rem; font-weight: 800; color: #fff;
+    transition: background .3s;
+  }
+  .card.paid .avatar { background: linear-gradient(135deg, #00b377, var(--accent2)); }
+
+  .info { flex: 1; min-width: 0; }
+  .name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .status { font-size: .68rem; color: var(--muted); margin-top: 1px; }
+  .card.paid .status { color: var(--accent2); }
+
+  .check-btn {
+    width: 34px; height: 34px; border-radius: 9px; border: 2px solid var(--border);
+    background: transparent; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; font-size: .95rem; transition: all .2s; flex-shrink: 0; color: var(--muted);
+  }
+  .card.paid .check-btn { background: var(--accent2); border-color: var(--accent2); color: #0a2a1e; font-weight: 900; }
+  .check-btn:hover { transform: scale(1.1); }
+
+  .del-btn {
+    width: 26px; height: 26px; border-radius: 7px; border: 1px solid transparent;
+    background: transparent; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; font-size: .7rem; color: var(--muted); transition: all .2s; flex-shrink: 0;
+  }
+  .del-btn:hover { color: var(--danger); border-color: var(--danger); background: rgba(255,77,109,.1); }
+
+  /* ── MODALS ── */
+  .overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75);
+    backdrop-filter: blur(8px); z-index: 200; align-items: flex-end; justify-content: center;
+  }
+  .overlay.open { display: flex; }
+
+  .sheet {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 22px 22px 0 0; padding: 22px 20px 40px;
+    width: 100%; max-width: 480px;
+    animation: up .3s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes up { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .handle { width: 38px; height: 4px; background: var(--border); border-radius: 99px; margin: 0 auto 18px; }
+  .sheet h2 { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; margin-bottom: 14px; }
+
+  .field {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 11px; color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: .9rem; padding: 11px 14px; outline: none; transition: border .2s; margin-bottom: 11px;
+  }
+  .field:focus { border-color: var(--accent); }
+
+  .row { display: flex; gap: 9px; }
+  .row .btn { flex: 1; justify-content: center; padding: 11px; }
+
+  /* confirm */
+  .confirm-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.8);
+    backdrop-filter: blur(8px); z-index: 300; align-items: center; justify-content: center;
+  }
+  .confirm-overlay.open { display: flex; }
+  .confirm-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 18px; padding: 26px 20px 22px;
+    width: calc(100% - 40px); max-width: 300px; text-align: center;
+    animation: pop .2s ease;
+  }
+  @keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .confirm-icon { font-size: 2.2rem; margin-bottom: 10px; }
+  .confirm-title { font-family: 'Syne', sans-serif; font-size: .95rem; font-weight: 800; margin-bottom: 7px; }
+  .confirm-msg { font-size: .8rem; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+
+  /* export */
+  .export-text {
+    width: 100%; height: 160px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 11px;
+    color: var(--text); font-family: monospace; font-size: .72rem;
+    padding: 11px; outline: none; resize: none; line-height: 1.6; margin-bottom: 10px;
+  }
+  .export-hint {
+    background: rgba(0,229,160,.07); border: 1px solid rgba(0,229,160,.2);
+    border-radius: 10px; padding: 11px; font-size: .75rem; color: var(--muted);
+    line-height: 1.7; margin-top: 8px;
+  }
+  .export-hint b { color: var(--accent2); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 22px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 11px; padding: 11px 18px; font-size: .82rem;
+    font-weight: 500; z-index: 999; transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+    pointer-events: none; white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── EMPTY ── */
+  .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
+  .empty-icon { font-size: 2.8rem; margin-bottom: 10px; }
+
+  /* ── INSTALL BANNER ── */
+  .install-banner {
+    margin: 10px 20px 0;
+    background: linear-gradient(135deg, rgba(124,92,252,.15), rgba(0,229,160,.08));
+    border: 1px solid rgba(124,92,252,.3);
+    border-radius: 13px; padding: 13px 15px;
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .install-banner .icon { font-size: 1.6rem; flex-shrink: 0; margin-top: 1px; }
+  .install-title { font-family: 'Syne', sans-serif; font-size: .82rem; font-weight: 700; margin-bottom: 3px; }
+  .install-steps { font-size: .72rem; color: var(--muted); line-height: 1.7; }
+  .install-steps b { color: var(--accent2); }
+  .install-close {
+    margin-left: auto; background: transparent; border: none;
+    color: var(--muted); cursor: pointer; font-size: .9rem; flex-shrink: 0; padding: 2px 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-top">
+    <h1>💰 Control de <span>Pagos</span></h1>
+    <div class="stats">
+      <div class="stat"><div class="stat-num g" id="sPaid">0</div><div class="stat-label">Pagaron</div></div>
+      <div class="stat"><div class="stat-num r" id="sUnpaid">0</div><div class="stat-label">Pendiente</div></div>
+      <div class="stat"><div class="stat-num p" id="sTotal">0</div><div class="stat-label">Total</div></div>
+    </div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="bar" style="width:0%"></div></div>
+</header>
+
+<!-- INSTALL BANNER -->
+<div class="install-banner" id="installBanner">
+  <div class="icon">📲</div>
+  <div style="flex:1">
+    <div class="install-title">Guarda esta app en tu dispositivo</div>
+    <div class="install-steps">
+      <b>iPhone:</b> Safari → compartir → "Añadir a pantalla inicio"<br>
+      <b>Android:</b> Chrome → menú ⋮ → "Añadir a pantalla inicio"<br>
+      <b>PC:</b> Guarda este archivo HTML y ábrelo con Chrome/Edge
+    </div>
+  </div>
+  <button class="install-close" onclick="closeBanner()">✕</button>
+</div>
+
+<!-- ACTIONS -->
+<div class="actions">
+  <button class="btn btn-primary" onclick="openAdd()">＋ Agregar</button>
+  <button class="btn btn-success" onclick="markAll(true)">✓ Todos pagaron</button>
+  <button class="btn btn-danger"  onclick="markAll(false)">↺ Reiniciar</button>
+  <button class="btn btn-ghost"   onclick="openExport()">📋 Exportar</button>
+</div>
+
+<!-- SEARCH -->
+<div class="search-wrap">
+  <div class="search-rel">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" id="search" type="text" placeholder="Buscar nombre..." oninput="render()">
+  </div>
+</div>
+
+<!-- LIST -->
+<div class="list" id="list"></div>
+
+<!-- ADD MODAL -->
+<div class="overlay" id="addModal">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>➕ Nueva persona</h2>
+    <input class="field" id="newName" type="text" placeholder="Nombre..." maxlength="40"
+      onkeydown="if(event.key==='Enter')doAdd()">
+    <div class="row">
+      <button class="btn btn-ghost" onclick="closeAdd()">Cancelar</button>
+      <button class="btn btn-primary" onclick="doAdd()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="confirm-overlay" id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-title">¿Eliminar persona?</div>
+    <div class="confirm-msg" id="confirmMsg">Esta acción no se puede deshacer.</div>
+    <div class="row">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn btn-danger" onclick="doDelete()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="overlay" id="exportModal">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>📋 Exportar datos</h2>
+    <textarea class="export-text" id="exportText" readonly></textarea>
+    <div class="row">
+      <button class="btn btn-ghost" onclick="selectAll()">Seleccionar</button>
+      <button class="btn btn-primary" onclick="copyText()">📋 Copiar</button>
+      <button class="btn btn-ghost" onclick="closeExport()">Cerrar</button>
+    </div>
+    <div class="export-hint">
+      <b>Cómo pegar en Excel / Google Sheets:</b><br>
+      1. Toca <b>Copiar</b> arriba<br>
+      2. Abre Excel o Google Sheets<br>
+      3. Clic en celda <b>A1</b> → pega con <b>Ctrl+V</b><br>
+      ✅ Los datos quedan en columnas automáticamente
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ──────────────────────────────────────────────
+//  DEFAULTS
+// ──────────────────────────────────────────────
+const DEFAULTS = [
+  "IVON","DANIEL","YISEL","TREJO","GABI","H/TERE","JOSE LUIS","ANDREA",
+  "SAHIRA","SAM","JAZIEL","PERLA","JESUS 71","LORENA","ERICA","VERONICA",
+  "ESTELA","MARI TERE","DIOSDADO","JULIA","VIVIANA","PAULINA","OLGA",
+  "JOSE LUIS 2","GISEL","VANESA","PERLA 2","ROXANA","E.NANCY","YAZ",
+  "YISEL 2","TERE","ABRIL"
+];
+
+const KEY   = 'pagos_app_v1';
+const BKEY  = 'pagos_banner_closed';
+
+// ──────────────────────────────────────────────
+//  STATE
+// ──────────────────────────────────────────────
+let people = [];
+let delTarget = null;
+
+// ──────────────────────────────────────────────
+//  STORAGE  (localStorage — persiste en el navegador)
+// ──────────────────────────────────────────────
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      people = JSON.parse(raw);
+    } else {
+      people = DEFAULTS.map(n => ({ id: uid(), name: n, paid: false, paidAt: null }));
+      save();
+    }
+  } catch(e) {
+    people = DEFAULTS.map(n => ({ id: uid(), name: n, paid: false, paidAt: null }));
+  }
+}
+
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(people)); }
+  catch(e) { toast('⚠️ No se pudo guardar — revisa el almacenamiento'); }
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+// ──────────────────────────────────────────────
+//  RENDER
+// ──────────────────────────────────────────────
+function initials(n) { return n.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase().slice(0,2); }
+
+function fmt(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'}) + ' ' +
+         d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+}
+
+function render() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const filtered = q ? people.filter(p=>p.name.toLowerCase().includes(q)) : people;
+  const unpaid = filtered.filter(p=>!p.paid);
+  const paid   = filtered.filter(p=>p.paid);
+
+  let html = '';
+  if (!filtered.length) {
+    html = `<div class="empty"><div class="empty-icon">🔍</div><div>Sin resultados</div></div>`;
+  } else {
+    if (unpaid.length) {
+      html += `<div class="section-title">⏳ Pendientes — ${unpaid.length}</div>`;
+      unpaid.forEach(p => html += cardHTML(p));
+    }
+    if (paid.length) {
+      html += `<div class="section-title">✅ Pagaron — ${paid.length}</div>`;
+      paid.forEach(p => html += cardHTML(p));
+    }
+  }
+  document.getElementById('list').innerHTML = html;
+  updateStats();
+}
+
+function cardHTML(p) {
+  const cls  = p.paid ? 'paid' : '';
+  const chk  = p.paid ? '✓' : '';
+  const stat = p.paid
+    ? `<span style="font-size:.65rem;background:rgba(0,229,160,.12);color:var(--accent2);border:1px solid rgba(0,229,160,.3);border-radius:5px;padding:1px 6px;">✓ Pagó ${fmt(p.paidAt)}</span>`
+    : `<span style="color:var(--muted)">Sin pago registrado</span>`;
+  return `
+    <div class="card ${cls}">
+      <div class="avatar">${initials(p.name)}</div>
+      <div class="info">
+        <div class="name">${p.name}</div>
+        <div class="status">${stat}</div>
+      </div>
+      <button class="check-btn" onclick="toggle('${p.id}')">${chk}</button>
+      <button class="del-btn"   onclick="askDel('${p.id}')">✕</button>
+    </div>`;
+}
+
+function updateStats() {
+  const paid  = people.filter(p=>p.paid).length;
+  const total = people.length;
+  document.getElementById('sPaid').textContent  = paid;
+  document.getElementById('sUnpaid').textContent = total - paid;
+  document.getElementById('sTotal').textContent  = total;
+  document.getElementById('bar').style.width = total ? (paid/total*100)+'%' : '0%';
+}
+
+// ──────────────────────────────────────────────
+//  ACTIONS
+// ──────────────────────────────────────────────
+function toggle(id) {
+  const p = people.find(x=>x.id===id);
+  if (!p) return;
+  p.paid = !p.paid;
+  p.paidAt = p.paid ? Date.now() : null;
+  save(); render();
+  toast(p.paid ? `✅ ${p.name} — pagado` : `↺ ${p.name} — desmarcado`);
+}
+
+function markAll(paid) {
+  people.forEach(p => { p.paid = paid; p.paidAt = paid ? Date.now() : null; });
+  save(); render();
+  toast(paid ? '✅ Todos marcados' : '↺ Lista reiniciada');
+}
+
+// ── ADD ──
+function openAdd() {
+  document.getElementById('addModal').classList.add('open');
+  setTimeout(()=>document.getElementById('newName').focus(), 300);
+}
+function closeAdd() {
+  document.getElementById('addModal').classList.remove('open');
+  document.getElementById('newName').value = '';
+}
+function doAdd() {
+  const v = document.getElementById('newName').value.trim().toUpperCase();
+  if (!v) return;
+  people.push({ id: uid(), name: v, paid: false, paidAt: null });
+  save(); render(); closeAdd();
+  toast(`➕ ${v} agregado`);
+}
+
+// ── DELETE ──
+function askDel(id) {
+  delTarget = id;
+  const p = people.find(x=>x.id===id);
+  document.getElementById('confirmMsg').textContent = `¿Eliminar a "${p?.name}"? No se puede deshacer.`;
+  document.getElementById('confirmModal').classList.add('open');
+}
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('open');
+  delTarget = null;
+}
+function doDelete() {
+  const p = people.find(x=>x.id===delTarget);
+  people = people.filter(x=>x.id!==delTarget);
+  save(); render(); closeConfirm();
+  if (p) toast(`🗑️ ${p.name} eliminado`);
+}
+
+// ── EXPORT ──
+function openExport() {
+  const rows = [['Nombre','Estado','Fecha de Pago']];
+  people.forEach(p => rows.push([p.name, p.paid?'PAGADO':'PENDIENTE', p.paidAt?new Date(p.paidAt).toLocaleString('es-MX'):'—']));
+  document.getElementById('exportText').value = rows.map(r=>r.join('\t')).join('\n');
+  document.getElementById('exportModal').classList.add('open');
+}
+function closeExport() { document.getElementById('exportModal').classList.remove('open'); }
+function selectAll()   { const t=document.getElementById('exportText'); t.select(); t.setSelectionRange(0,99999); }
+function copyText() {
+  const t = document.getElementById('exportText');
+  t.select(); t.setSelectionRange(0,99999);
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(t.value).then(()=>toast('✅ ¡Copiado! Pega en Excel'));
+  } else { document.execCommand('copy'); toast('✅ ¡Copiado!'); }
+}
+
+// ── BANNER ──
+function closeBanner() {
+  document.getElementById('installBanner').style.display='none';
+  try { localStorage.setItem(BKEY,'1'); } catch{}
+}
+
+// ── TOAST ──
+let _tt;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(_tt); _tt = setTimeout(()=>el.classList.remove('show'), 2600);
+}
+
+// ── CLOSE ON BACKDROP ──
+['addModal','exportModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click', function(e){
+    if (e.target===this) this.classList.remove('open');
+  });
+});
+
+// ──────────────────────────────────────────────
+//  INIT
+// ──────────────────────────────────────────────
+load();
+render();
+try { if (localStorage.getItem(BKEY)) document.getElementById('installBanner').style.display='none'; } catch{}
+</script>
+</body>
+</html>
